@@ -1,8 +1,8 @@
-# GitHub Issue Generator (ghig)
+# Go-Fuzz Issue Generator (gfig)
 
-ghig is a utility for creating issues related to [Go-Fuzz](https://github.com/dvyukov/go-fuzz) crash files
+gfig is a utility for creating descriptions related to [Go-Fuzz](https://github.com/dvyukov/go-fuzz) crash files
 
-Usage: `ghig <applicationTemplate> <crashFile>`
+Usage: `gfig <applicationTemplate> <crashFile>`
 
 The application template is what will be used for generating the sample application.
 An example of a template is:
@@ -27,7 +27,7 @@ func main() {
 }
 ```
 
-When `ghig` looks at the crash file it will determine the crash type (panic or hang),
+When `gfig` looks at the crash file it will determine the crash type (panic or hang),
 apply the respective message, and generate a description of the crash with the filename
 `<crashFileName>_description.md`.
 
@@ -90,7 +90,7 @@ of `<crashFile>.quoted`.
 > github.com/pelletier/go-toml.Load(0x1b81e0, 0x8b, 0x0, 0x0, 0x0)
 >     /Users/lander/go/src/github.com/pelletier/go-toml/toml.go:373 +0x8e
 > main.main()
->     /var/folders/6y/xxqr1vqn6q7c_ttvdgjt7p1w0000gn/T/ghig.go:19 +0x33
+>     /var/folders/6y/xxqr1vqn6q7c_ttvdgjt7p1w0000gn/T/gfig.go:19 +0x33
 > 
 > goroutine 5 [chan send]:
 > github.com/pelletier/go-toml.(*tomlLexer).emit(0xc8200142d0, 0x11)
@@ -122,7 +122,7 @@ of `<crashFile>.quoted`.
 >     go-toml parser.go:30  (*tomlParser).run(#2)
 >     go-toml parser.go:361 parseToml(0xc820018240, 0x8b)
 >     go-toml toml.go:373   Load(0x1b81e0, 0x8b, 0, 0, 0)
->     main    ghig.go:19    main()
+>     main    gfig.go:19    main()
 > 1: chan send [Created by go-toml.lexToml @ lexer.go:586]
 >     go-toml lexer.go:62   (*tomlLexer).emit(#4, 0x11)
 >     go-toml lexer.go:486  (*tomlLexer).lexInsideKeyGroupArray(#4, #3)

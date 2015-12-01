@@ -51,7 +51,7 @@ type Application struct {
 
 func main() {
 	if len(os.Args) != 3 {
-		fmt.Fprintf(os.Stderr, "Invalid arguments given. Usage: ghig <applicationTemplate> <unquotedCrashFile>")
+		fmt.Fprintf(os.Stderr, "Invalid arguments given. Usage: gfig <applicationTemplate> <unquotedCrashFile>")
 
 		return
 	}
@@ -98,7 +98,7 @@ func main() {
 		message = hangMessage
 		crashType = "hang"
 	} else {
-		file, err := os.Create(path.Join(os.TempDir(), "ghig.go"))
+		file, err := os.Create(path.Join(os.TempDir(), "gfig_test.go"))
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(-1)
