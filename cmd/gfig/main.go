@@ -13,9 +13,9 @@ import (
 )
 
 const (
-	hangMessage      = "The following program hangs with the provided go-fuzz output:"
-	panicMessage     = "The following program panics with the provided output:"
-	standardTemplate = `{{ .Message }}
+	hangMessage      = "hangs with the provided go-fuzz output:"
+	panicMessage     = "panics with the provided output:"
+	standardTemplate = `The following program at revision ` + "`" + `{{ .Revision }}` + "`" + ` {{ .Message }}
 
 ` + "```" + `
 {{ .Program }}
@@ -42,7 +42,7 @@ This {{ .Type }} was discovered with [go-fuzz](https://github.com/dvyukov/go-fuz
 )
 
 type CrashDescription struct {
-	Type, Message, Program, Output, PanicParse string
+	Type, Message, Program, Output, PanicParse, Revision string
 }
 
 type Application struct {
@@ -50,13 +50,17 @@ type Application struct {
 }
 
 func main() {
-	if len(os.Args) != 3 {
-		fmt.Fprintf(os.Stderr, "Invalid arguments given. Usage: gfig <applicationTemplate> <unquotedCrashFile>")
+	if len(os.Args) != 4 {
+		fmt.Fprintf(os.Stderr, "Invalid arguments given. Usage: gfig <gitRepo> <applicationTemplate> <unquotedCrashFile>")
 
 		return
 	}
 
-	appTemplateText, err := ioutil.ReadFile(os.Args[1])
+	gitRepo := os.Args[1]
+	appTemplatePath := os.Args[2]
+	crashFile := os.Args[3]
+
+	appTemplateText, err := ioutil.ReadFile(appTemplatePath)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(-1)
@@ -70,7 +74,7 @@ func main() {
 		descriptionOutput bytes.Buffer
 	)
 
-	quotedData, err := ioutil.ReadFile(os.Args[2] + ".quoted")
+	quotedData, err := ioutil.ReadFile(crashFile + ".quoted")
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(-1)
@@ -85,7 +89,7 @@ func main() {
 	}
 
 	// Read go-fuzz's output
-	output, err := ioutil.ReadFile(os.Args[2] + ".output")
+	output, err := ioutil.ReadFile(crashFile + ".output")
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(-1)
@@ -98,7 +102,7 @@ func main() {
 		message = hangMessage
 		crashType = "hang"
 	} else {
-		file, err := os.Create(path.Join(os.TempDir(), "gfig_test.go"))
+		file, err := os.Create(path.Join(os.TempDir(), "gfig_sample.go"))
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(-1)
@@ -111,17 +115,24 @@ func main() {
 		goRunCommand := exec.Command("go", "run", file.Name())
 
 		output, _ = goRunCommand.CombinedOutput()
+
+		if len(output) == 0 {
+			fmt.Fprintln(os.Stderr, crashFile, "is not a valid crash")
+			os.Exit(0)
+		}
 	}
 
-	if err := descriptionTemplate.Execute(&descriptionOutput, NewCrashDescription(crashType, message, string(applicationOutput.Bytes()), string(output))); err != nil {
+	crashDescription := NewCrashDescription(gitRepo, crashType, message, string(applicationOutput.Bytes()), string(output))
+
+	if err := descriptionTemplate.Execute(&descriptionOutput, crashDescription); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(-1)
 	}
 
-	ioutil.WriteFile(os.Args[2]+"_description.md", descriptionOutput.Bytes(), os.ModePerm)
+	ioutil.WriteFile(crashFile+"_description.md", descriptionOutput.Bytes(), os.ModePerm)
 }
 
-func NewCrashDescription(crashType, message, program, output string) CrashDescription {
+func NewCrashDescription(gitRepo, crashType, message, program, output string) CrashDescription {
 	goRunCommand := exec.Command("panicparse")
 	goRunCommand.Stdin = strings.NewReader(output)
 
@@ -137,5 +148,19 @@ func NewCrashDescription(crashType, message, program, output string) CrashDescri
 		Program:    program,
 		PanicParse: string(goRunStdout),
 		Output:     output,
+		Revision:   GitDescribeRepo(gitRepo),
 	}
+}
+
+func GitDescribeRepo(repoPath string) string {
+	gitDescribeCommand := exec.Command("git", "describe", "--all", "--long")
+	gitDescribeCommand.Dir = repoPath
+
+	gitStdout, err := gitDescribeCommand.Output()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(-1)
+	}
+
+	return string(gitStdout)
 }
