@@ -2,9 +2,9 @@
 
 gfig is a utility for creating descriptions related to [Go-Fuzz](https://github.com/dvyukov/go-fuzz) crash files
 
-Usage: `gfig <applicationTemplate> <crashFile>`
+Usage: `gfig <gitRepo> <applicationTemplate> <crashFile>`
 
-The application template is what will be used for generating the sample application.
+The git repo path should be the full path for target package's git repo. This is used for generating revision information. The application template is what will be used for generating the sample application.
 An example of a template is:
 
 ```
@@ -38,7 +38,7 @@ of `<crashFile>.quoted`.
 
 ### Panic
 
-> The following program panics with the provided output:
+> The following program at revision `tags/v0.3.1-0-g6d743bb` panics with the provided output:
 > 
 > ```
 > package main
